@@ -17,9 +17,13 @@ if st.button("প্রেডিক্ট করুন"):
             if df.empty:
                 st.error("ভুল নাম দিয়েছেন! সঠিক কোড লিখুন।")
             else:
+                # ডেটা ফরম্যাটের নতুন সমস্যা দূর করার জন্য
+                df = df.copy()
+                
                 df['Return'] = df['Close'].pct_change()
                 df['Volatility'] = df['High'] - df['Low']
                 df['Price_Diff'] = df['Close'].diff()
+                
                 gain = df['Price_Diff'].clip(lower=0)
                 loss = -df['Price_Diff'].clip(upper=0)
                 ema_gain = gain.ewm(com=13, adjust=False).mean()
@@ -34,12 +38,16 @@ if st.button("প্রেডিক্ট করুন"):
                 model = RandomForestClassifier(n_estimators=100, random_state=1)
                 model.fit(X, y)
 
-                latest_data = np.array([[df['Return'].iloc[-1], df['Volatility'].iloc[-1], df['RSI'].iloc[-1]]])
+                latest_data = np.array([[df['Return'].iloc[-1].item(), df['Volatility'].iloc[-1].item(), df['RSI'].iloc[-1].item()]])
                 prediction = model.predict(latest_data)
 
+                # সিঙ্গেল ভ্যালু বের করার জন্য .item() ব্যবহার করা হয়েছে যাতে format ভুল না দেখায়
+                last_close_val = df['Close'].iloc[-1].item()
+                rsi_val = df['RSI'].iloc[-1].item()
+
                 st.subheader(f"📊 {ticker} এর বর্তমান অবস্থা:")
-                st.metric(label="সর্বশেষ দাম (Last Close)", value=f"₹{df['Close'].iloc[-1]:.2f}")
-                st.metric(label="RSI ইন্ডিকেটর", value=f"{df['RSI'].iloc[-1]:.2f}")
+                st.metric(label="সর্বশেষ দাম (Last Close)", value=f"₹{last_close_val:.2f}")
+                st.metric(label="RSI ইন্ডিকেটর", value=f"{rsi_val:.2f}")
 
                 st.subheader("🎯 এআই ফাইনাল প্রেডিকশন:")
                 if prediction == 1:
