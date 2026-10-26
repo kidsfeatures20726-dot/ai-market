@@ -13,9 +13,9 @@ st.markdown("""
     <style>
     .main { background-color: #0e1117; color: #ffffff; }
     .stButton>button { width: 100%; background-color: #4CAF50; color: white; border-radius: 8px; font-weight: bold; }
-    .metric-box { padding: 15px; background-color: #1f293d; border-radius: 10px; border: 1px solid #3b4252; }
+    .metric-box { padding: 15px; background-color: #1f293d; border-radius: 10px; border: 1px solid #3b4252; text-align: center; }
     </style>
-    """, unsafe_allowed_html=True)
+    """, unsafe_allow_html=True)
 
 st.title("⚡ Pro AI Market Terminal & Live Alert System")
 st.write("অ্যাডভান্সড মেশিন লার্নিং ও ইন্ডিকেটর ভিত্তিক রিয়েল-টাইম মার্কেট অ্যানালাইসিস টার্মিনাল।")
@@ -51,7 +51,7 @@ try:
         df['EMA_9'] = df['Close'].ewm(span=9, adjust=False).mean()
         df['EMA_21'] = df['Close'].ewm(span=21, adjust=False).mean()
         
-        # ৩. প্রفেশনাল ইন্ডিকেটর ৩: Volatility (দামের তীব্রতা)
+        # ৩. প্রফেশনাল ইন্ডিকেটর ৩: Volatility (দামের তীব্রতা)
         df['Return'] = df['Close'].pct_change()
         df['Volatility'] = df['High'] - df['Low']
         
@@ -59,7 +59,7 @@ try:
         df['Price_Up'] = (df['Close'].shift(-1) > df['Close']).astype(int)
         df.dropna(inplace=True)
 
-        # AI মডেল ট্রেনিং
+        # AI মডেল Training
         X = df[['Return', 'Volatility', 'RSI', 'EMA_9', 'EMA_21']]
         y = df['Price_Up']
         model = RandomForestClassifier(n_estimators=100, random_state=42)
@@ -74,7 +74,7 @@ try:
             df['EMA_21'].iloc[-1].item()
         ]])
         prediction = model.predict(latest_data)
-        prob = model.predict_proba(latest_data)[0]
+        prob = model.predict_proba(latest_data)
 
         # শেষ ভ্যালুগুলো বের করা
         last_close = df['Close'].iloc[-1].item()
@@ -86,28 +86,29 @@ try:
         col1, col2, col3 = st.columns(3)
         
         with col1:
-            st.markdown("<div class='metric-box'>", unsafe_allowed_html=True)
+            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
             st.metric(label="💰 সর্বশেষ লাইভ প্রাইস", value=f"₹{last_close:.2f}")
-            st.markdown("</div>", unsafe_allowed_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
             
         with col2:
-            st.markdown("<div class='metric-box'>", unsafe_allowed_html=True)
+            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
             st.metric(label="📊 RSI (14) ভ্যালু", value=f"{rsi_val:.2f}", 
-                      delta="অতিরিক্ত কেনা (Overbought)" if rsi_val > 70 else "অতিরিক্ত বিক্রি (Oversold)" if rsi_val < 30 else "স্বাভাবিক জোন")
-            st.markdown("</div>", unsafe_allowed_html=True)
+                      delta="অতিরিক্ত কেনা" if rsi_val > 70 else "অতিরিক্ত বিক্রি" if rsi_val < 30 else "স্বাভাবিক জোন")
+            st.markdown("</div>", unsafe_allow_html=True)
             
         with col3:
-            st.markdown("<div class='metric-box'>", unsafe_allowed_html=True)
+            st.markdown("<div class='metric-box'>", unsafe_allow_html=True)
             trend_signal = "⚡ BULLISH Crossover" if ema9_val > ema21_val else "⚠️ BEARISH Crossover"
             st.metric(label="📈 Trend (EMA 9/21)", value=trend_signal)
-            st.markdown("</div>", unsafe_allowed_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
 
         # এআই প্রেডিকশন ও লাইভ অ্যালার্ট সেকশন
         st.subheader("🎯 এআই লাইভ অ্যালার্ট ও সিগন্যাল")
         
-        confidence = prob[1] if prediction == 1 else prob[0]
+        # কনফিডেন্স পার্সেন্টেজ বের করা
+        confidence = prob[0][1] if prediction[0] == 1 else prob[0][0]
         
-        if prediction == 1:
+        if prediction[0] == 1:
             st.success(f"📈 [🚨 LIVE ALERT] MARKET TREND: UP (দাম বাড়ার সম্ভাবনা রয়েছে) | এআই কনফিডেন্স: {confidence*100:.1f}%")
             st.info("💡 সাজেস্টেড অ্যাকশন: বাই (Buy) পজিশন খোঁজা যেতে পারে। অবশ্যই স্টপ-লস বজায় রাখুন।")
         else:
